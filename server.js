@@ -1,4 +1,5 @@
 import "dotenv/config";
+import notifier from "node-notifier";
 import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
@@ -22,6 +23,61 @@ const TIMEOUT_MS   = 15000;
 const CSFLOAT_FEE  = 0.02;
 const SKINPORT_FEE = 0.12;
 const STEAM_FEE    = 0.15;
+
+// ── Notification settings ─────────────────────────────────────────────────────
+const NOTIFY_MIN_PROFIT   = parseFloat(process.env.NOTIFY_MIN_PROFIT  || "10");
+const NOTIFY_MIN_DISCOUNT = parseFloat(process.env.NOTIFY_MIN_DISCOUNT || "25");
+const notifiedDeals = new Set(); // avoid repeat notifications for same item
+
+function notifyDeal(deal) {
+  const key = deal.name + ":" + deal.source;
+  if (notifiedDeals.has(key)) return;
+  notifiedDeals.add(key);
+  setTimeout(function() { notifiedDeals.delete(key); }, 10 * 60 * 1000);
+  const msg = deal.name + " | " + deal.discount + "% off | $" + deal.profit.toFixed(2) + " profit (" + deal.source + ")";
+  console.log("[notify] HOT DEAL: " + msg);
+  notifier.notify({ title: "Skin Sniper - Hot Deal!", message: msg, sound: true, wait: false });
+}
+
+// ── Price history (in-memory, saved to JSON file) ────────────────────────────
+import { readFileSync, writeFileSync, existsSync } from "fs";
+
+const DB_FILE = "prices.json";
+let priceHistory = [];
+
+// Load existing history from file
+if (existsSync(DB_FILE)) {
+  try {
+    priceHistory = JSON.parse(readFileSync(DB_FILE, "utf8"));
+    console.log("[db] Loaded " + priceHistory.length + " price records");
+  } catch (e) {
+    console.error("[db] Failed to load history:", e.message);
+    priceHistory = [];
+  }
+}
+
+function savePrices(deals) {
+  const now = Date.now();
+  const cutoff = now - (30 * 24 * 60 * 60 * 1000);
+  // Add new records
+  for (const d of deals) {
+    priceHistory.push({
+      name: d.name, source: d.source,
+      listing: d.listing, market: d.market,
+      discount: d.discount, profit: d.profit,
+      scanned_at: now,
+    });
+  }
+  // Prune records older than 30 days
+  priceHistory = priceHistory.filter(function(r) { return r.scanned_at > cutoff; });
+  // Save to file
+  try {
+    writeFileSync(DB_FILE, JSON.stringify(priceHistory));
+    console.log("[db] Saved " + deals.length + " records, total: " + priceHistory.length);
+  } catch (e) {
+    console.error("[db] Save failed:", e.message);
+  }
+}
 
 // ── Cache ─────────────────────────────────────────────────────────────────────
 const cache = new Map();
@@ -126,7 +182,7 @@ async function autoListOnCSFloat(item, targetPrice) {
 async function fetchSkinportAll(appId) {
   const cacheKey = "sp_all:" + appId;
   const cached = getCache(cacheKey);
-  if (cached) { console.log("[skinport] cache hit (" + cached.size + " items)"); return cached; }
+  if (cached) return cached;
   console.log("[skinport] Fetching all items...");
   await new Promise(r => setTimeout(r, 2000));
   try {
@@ -136,6 +192,11 @@ async function fetchSkinportAll(appId) {
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     console.log("[skinport] Status: " + res.status);
+    if (res.status === 429) {
+      console.log("[skinport] Rate limited — waiting 5 mins before retry");
+      setCache(cacheKey, new Map(), 5 * 60 * 1000);
+      return new Map();
+    }
     if (!res.ok) return new Map();
     const buf = Buffer.from(await res.arrayBuffer());
     let data;
@@ -147,7 +208,7 @@ async function fetchSkinportAll(appId) {
         map.set(item.market_hash_name, { min_price: item.min_price, suggested_price: item.suggested_price, item_page: item.item_page });
     }
     console.log("[skinport] Got " + map.size + " items");
-    setCache(cacheKey, map, 15 * 60 * 1000);
+    setCache(cacheKey, map, 30 * 60 * 1000);
     return map;
   } catch (err) {
     console.error("[skinport] Failed:", err.message);
@@ -180,8 +241,26 @@ async function fetchCSFloat(minPrice, maxPrice) {
   }
 }
 
-// ── Routes ────────────────────────────────────────────────────────────────────
-app.get("/health", (_, res) => res.json({ ok: true, time: new Date().toISOString() }));
+
+// ── Buff163 price — use Skinport suggested_price as reference (already cached) ─
+async function fetchBuff163Price(marketHashName) {
+  // Skinport suggested_price closely mirrors Buff163 market value
+  // and is already loaded in memory — no extra API call needed
+  const spData = await fetchSkinportAll(730);
+  const item = spData.get(marketHashName);
+  if (item && item.suggested_price) {
+    return { usd: parseFloat(item.suggested_price.toFixed(2)), source: "skinport_ref" };
+  }
+  return null;
+}
+
+// GET /buff-price?name=... — lookup a single item price on Buff163
+app.get("/buff-price", async (req, res) => {
+  const { name } = req.query;
+  if (!name) return res.status(400).json({ error: "name required" });
+  const price = await fetchBuff163Price(name);
+  res.json({ name, buff: price });
+});
 
 app.get("/deals", async (req, res) => {
   const { game = "cs2", minPrice = 0.05, maxPrice = 1000, minDiscount = 10, source = "all" } = req.query;
@@ -193,6 +272,7 @@ app.get("/deals", async (req, res) => {
   if (source === "all" || source === "skinport") {
     const allItems = await fetchSkinportAll(appId);
     for (const [name, data] of allItems) {
+      if (/Souvenir|souvenir/.test(name)) continue;
       const listing = data.min_price, market = data.suggested_price;
       if (!listing || !market || listing <= 0 || market <= 0 || listing < minP || listing > maxP) continue;
       const disc = ((market - listing) / market) * 100;
@@ -224,6 +304,19 @@ app.get("/deals", async (req, res) => {
   }
 
   deals.sort((a, b) => b.discount - a.discount);
+
+  // Fire notifications for hot deals
+  for (const deal of deals) {
+    if (deal.profit >= NOTIFY_MIN_PROFIT && deal.discount >= NOTIFY_MIN_DISCOUNT) {
+      notifyDeal(deal);
+    }
+  }
+
+  // Save to price history
+  if (deals.length > 0) {
+    try { savePrices(deals); } catch (err) { console.error("[db] Save error:", err.message); }
+  }
+
   console.log("[deals] Returning " + deals.length + " total deals");
   res.json({ deals, scannedAt: new Date().toISOString(), count: deals.length });
 });
@@ -308,6 +401,24 @@ app.get("/steam-deals", async (req, res) => {
   deals.sort((a, b) => b.profit - a.profit);
   console.log("[steam-deals] Found " + deals.length + " deals");
   res.json({ deals, scannedAt: new Date().toISOString(), count: deals.length });
+});
+
+// GET /history/:name — get price history for a specific item
+app.get("/history/:name", (req, res) => {
+  const name = decodeURIComponent(req.params.name);
+  const rows = priceHistory.filter(function(r) { return r.name === name; })
+    .sort(function(a,b) { return b.scanned_at - a.scanned_at; })
+    .slice(0, 500);
+  res.json({ name, history: rows });
+});
+
+// GET /history-search?q=... — search items in history
+app.get("/history-search", (req, res) => {
+  const q = (req.query.q || "").toLowerCase();
+  const names = [...new Set(priceHistory.map(function(r) { return r.name; }))]
+    .filter(function(n) { return n.toLowerCase().includes(q); })
+    .slice(0, 20);
+  res.json({ results: names });
 });
 
 app.post("/buy", (req, res) => {

@@ -2,428 +2,566 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Skin Sniper</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f9f9f8; color: #1a1a1a; padding: 1.5rem; }
-  h1 { font-size: 20px; font-weight: 500; }
-  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 8px; }
-  .status-row { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #666; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: #aaa; display: inline-block; }
-  .dot.loading { background: #BA7517; animation: pulse 1s infinite; }
-  .dot.ok { background: #639922; }
-  .dot.error { background: #E24B4A; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-  .tabs { display: flex; gap: 0; margin-bottom: 1rem; border-bottom: 1px solid #e5e5e5; }
-  .tab { font-size: 13px; padding: 8px 16px; cursor: pointer; color: #888; border-bottom: 2px solid transparent; margin-bottom: -1px; user-select: none; }
-  .tab.active { color: #1a1a1a; border-bottom-color: #1a1a1a; font-weight: 500; }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
-  .filters { display: flex; flex-wrap: wrap; gap: 8px; padding: 0.75rem 0; border-top: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5; margin-bottom: 1rem; align-items: center; }
-  .filter-group { display: flex; align-items: center; gap: 6px; }
-  .filter-group label { font-size: 12px; color: #666; white-space: nowrap; }
-  select, input[type=number] { font-size: 13px; padding: 4px 8px; border-radius: 6px; border: 1px solid #ddd; background: #fff; color: #1a1a1a; height: 30px; }
-  input[type=number] { width: 80px; }
-  .btn { font-size: 13px; padding: 4px 14px; border-radius: 6px; border: 1px solid #ddd; background: #fff; color: #1a1a1a; cursor: pointer; height: 30px; white-space: nowrap; }
-  .btn:hover { background: #f0f0f0; }
-  .btn.primary { background: #1a6bbf; color: #fff; border-color: #1a6bbf; }
-  .btn.primary:hover { background: #1559a0; }
-  .btn.success { background: #3B6D11; color: #fff; border-color: #3B6D11; font-size: 12px; padding: 3px 10px; height: 26px; }
-  .btn.success:hover { background: #2e5509; }
-  .btn.danger { background: #fff; color: #a32d2d; border-color: #f5c1c1; font-size: 12px; padding: 3px 10px; height: 26px; }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1rem; }
-  .metric { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 0.75rem 1rem; }
-  .metric-label { font-size: 12px; color: #888; margin-bottom: 4px; }
-  .metric-value { font-size: 22px; font-weight: 500; }
-  .metric-value.green { color: #3B6D11; }
-  .err-box { background: #fff0f0; border: 1px solid #f5c1c1; border-radius: 6px; padding: 0.75rem 1rem; font-size: 13px; color: #a32d2d; margin-bottom: 1rem; }
-  .info-box { background: #f0f6ff; border: 1px solid #b5d4f4; border-radius: 6px; padding: 0.75rem 1rem; font-size: 13px; color: #185FA5; margin-bottom: 1rem; }
-  .table-wrap { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
-  th { text-align: left; font-size: 11px; font-weight: 500; color: #888; padding: 8px 10px; border-bottom: 1px solid #e5e5e5; white-space: nowrap; cursor: pointer; user-select: none; background: #fafafa; }
-  td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: #fafafa; }
-  .badge { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 99px; font-weight: 500; }
-  .badge.skinport { background: #eaf3de; color: #3B6D11; }
-  .badge.csfloat { background: #faeeda; color: #854F0B; }
-  .badge.steam { background: #dceefb; color: #185FA5; }
-  .badge.pending { background: #fef3dc; color: #854F0B; }
-  .badge.listed { background: #eaf3de; color: #3B6D11; }
-  .discount { font-weight: 500; color: #3B6D11; }
-  .discount.hot { color: #a32d2d; font-weight: 700; }
-  .empty { text-align: center; padding: 2.5rem; color: #aaa; font-size: 14px; }
-  .buy-link { font-size: 12px; color: #1a6bbf; text-decoration: none; }
-  .buy-link:hover { text-decoration: underline; }
-  .refresh-note { font-size: 11px; color: #aaa; margin-top: 0.5rem; text-align: right; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f4f4f2; color: #1a1a1a; }
+body.dark { background: #111; color: #e0e0e0; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: #fff; border-bottom: 1px solid #e5e5e5; position: sticky; top: 0; z-index: 10; gap: 8px; flex-wrap: wrap; }
+body.dark .topbar { background: #1a1a1a; border-color: #333; }
+.title { font-size: 17px; font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.status-row { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #666; }
+body.dark .status-row { color: #555; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: #aaa; display: inline-block; }
+.dot.loading { background: #BA7517; animation: pulse 1s infinite; }
+.dot.ok { background: #639922; }
+.dot.error { background: #E24B4A; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.tog { font-size: 12px; font-weight: 500; padding: 0 10px; height: 32px; border-radius: 8px; border: 1px solid #ccc; background: #f0f0f0; color: #444; cursor: pointer; white-space: nowrap; }
+.tog:hover { background: #e0e0e0; }
+body.dark .tog { background: #2a2a2a; border-color: #444; color: #ccc; }
+.scan-btn { background: #1a6bbf; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; padding: 0 16px; height: 32px; cursor: pointer; }
+.scan-btn:disabled { opacity: 0.5; }
+.tabs { display: flex; background: #fff; border-bottom: 1px solid #e5e5e5; overflow-x: auto; }
+.tabs::-webkit-scrollbar { display: none; }
+body.dark .tabs { background: #1a1a1a; border-color: #333; }
+.tab { font-size: 13px; padding: 10px 16px; cursor: pointer; color: #888; border-bottom: 2px solid transparent; white-space: nowrap; user-select: none; flex-shrink: 0; }
+.tab.active { color: #1a1a1a; border-bottom-color: #1a6bbf; font-weight: 500; }
+body.dark .tab { color: #555; }
+body.dark .tab.active { color: #e0e0e0; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.filters-wrap { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 0.75rem 1rem; }
+body.dark .filters-wrap { background: #1a1a1a; border-color: #333; }
+.filters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fg { display: flex; align-items: center; gap: 6px; }
+.fg label { font-size: 11px; color: #888; white-space: nowrap; min-width: 55px; }
+select, input[type=number], input[type=text] { font-size: 13px; padding: 5px 8px; border-radius: 6px; border: 1px solid #ddd; background: #fff; color: #1a1a1a; width: 100%; height: 32px; }
+body.dark select, body.dark input { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
+.metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 1rem; }
+.metric { background: #fff; border-radius: 10px; padding: 0.75rem 1rem; }
+body.dark .metric { background: #1a1a1a; }
+.metric-label { font-size: 11px; color: #888; margin-bottom: 2px; }
+.metric-value { font-size: 20px; font-weight: 600; }
+.metric-value.green { color: #3B6D11; }
+.err-box { margin: 0.75rem 1rem; background: #fff0f0; border: 1px solid #f5c1c1; border-radius: 8px; padding: 0.75rem; font-size: 13px; color: #a32d2d; }
+.info-box { margin: 0.75rem 1rem; background: #f0f6ff; border: 1px solid #b5d4f4; border-radius: 8px; padding: 0.75rem; font-size: 13px; color: #185FA5; }
+.sort-bar { display: flex; gap: 6px; padding: 0.5rem 1rem; overflow-x: auto; }
+.sort-bar::-webkit-scrollbar { display: none; }
+.sort-chip { font-size: 12px; padding: 5px 12px; border-radius: 99px; border: 1px solid #ddd; background: #fff; color: #666; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+body.dark .sort-chip { background: #1a1a1a; border-color: #444; color: #888; }
+.sort-chip.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+body.dark .sort-chip.active { background: #e0e0e0; color: #111; border-color: #e0e0e0; }
+.deals-list { padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 8px; }
+.deal-card { background: #fff; border-radius: 10px; padding: 0.875rem 1rem; border: 1px solid #e5e5e5; }
+body.dark .deal-card { background: #1a1a1a; border-color: #333; }
+.deal-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.deal-name { font-size: 13px; font-weight: 500; flex: 1; margin-right: 8px; line-height: 1.3; }
+.deal-stats { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 4px; margin-bottom: 10px; }
+.ds { font-size: 11px; color: #888; }
+body.dark .ds { color: #555; }
+.ds span { display: block; font-size: 12px; color: #1a1a1a; font-weight: 500; }
+body.dark .ds span { color: #e0e0e0; }
+.ds.profit span { color: #3B6D11; }
+.ds.ref span { color: #185FA5; }
+.deal-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn-buy { background: #3B6D11; color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 500; padding: 7px 12px; cursor: pointer; }
+.btn-ghost { background: #fff; color: #444; border: 1px solid #ddd; border-radius: 8px; font-size: 12px; font-weight: 500; padding: 7px 12px; cursor: pointer; text-decoration: none; display: inline-block; }
+body.dark .btn-ghost { background: #2a2a2a; color: #ccc; border-color: #444; }
+.badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 99px; font-weight: 500; margin-bottom: 4px; }
+.badge.skinport { background: #eaf3de; color: #3B6D11; }
+.badge.csfloat { background: #faeeda; color: #854F0B; }
+.badge.steam { background: #dceefb; color: #185FA5; }
+.badge.pending { background: #fef3dc; color: #854F0B; }
+.badge.listed { background: #eaf3de; color: #3B6D11; }
+.empty { text-align: center; padding: 3rem 1rem; color: #aaa; font-size: 14px; }
+.refresh-note { font-size: 11px; color: #aaa; text-align: center; padding: 0.5rem; }
+.inv-list { padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 8px; }
+.inv-card { background: #fff; border-radius: 10px; padding: 0.875rem 1rem; border: 1px solid #e5e5e5; }
+body.dark .inv-card { background: #1a1a1a; border-color: #333; }
+.inv-name { font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+.inv-stats { display: flex; gap: 16px; margin-bottom: 8px; flex-wrap: wrap; }
+.inv-stat { font-size: 11px; color: #888; }
+.inv-stat span { display: block; font-size: 13px; color: #1a1a1a; font-weight: 500; }
+body.dark .inv-stat span { color: #e0e0e0; }
+.btn-cancel { background: #fff; color: #a32d2d; border: 1px solid #f5c1c1; border-radius: 8px; font-size: 13px; padding: 8px; cursor: pointer; width: 100%; margin-top: 8px; }
+body.dark .btn-cancel { background: #1a1a1a; }
+.tbl-wrap { overflow-x: auto; padding: 0 1rem 1rem; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; border-radius: 10px; overflow: hidden; min-width: 700px; }
+body.dark table { background: #1a1a1a; }
+th { text-align: left; font-size: 11px; font-weight: 500; color: #888; padding: 8px 12px; border-bottom: 1px solid #e5e5e5; background: #fafafa; white-space: nowrap; cursor: pointer; user-select: none; }
+body.dark th { background: #222; border-color: #333; color: #555; }
+td { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; white-space: nowrap; }
+body.dark td { border-color: #2a2a2a; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafafa; }
+body.dark tr:hover td { background: #222; }
+@media (min-width: 600px) {
+  .metrics { grid-template-columns: repeat(4, 1fr); }
+  .filters { grid-template-columns: repeat(3, 1fr); }
+}
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <h1>Skin sniper</h1>
-  <div style="display:flex;gap:8px;align-items:center;">
+  <span class="title">Skin Sniper</span>
+  <div class="topbar-right">
     <div class="status-row"><span class="dot" id="dot"></span><span id="status-text">Idle</span></div>
-    <button class="btn primary" onclick="startScan()">Scan now</button>
+    <button class="tog" id="viewTog" onclick="toggleView()">📱 Mobile</button>
+    <button class="tog" id="darkTog" onclick="toggleDark()">☀ Light</button>
+    <button class="scan-btn" onclick="startScan()">Scan</button>
   </div>
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('deals')">Deals</div>
-  <div class="tab" onclick="switchTab('steam')">Steam buys</div>
-  <div class="tab" onclick="switchTab('pending')">Pending <span id="pending-count"></span></div>
-  <div class="tab" onclick="switchTab('listed')">Listed <span id="listed-count"></span></div>
+  <div class="tab active" onclick="switchTab(this,'deals')">Deals</div>
+  <div class="tab" onclick="switchTab(this,'steam')">Steam</div>
+  <div class="tab" onclick="switchTab(this,'history')">History</div>
+  <div class="tab" onclick="switchTab(this,'pending')">Pending <span id="pending-count"></span></div>
+  <div class="tab" onclick="switchTab(this,'listed')">Listed <span id="listed-count"></span></div>
 </div>
 
 <!-- DEALS TAB -->
 <div class="tab-content active" id="tab-deals">
-  <div class="filters">
-    <div class="filter-group">
-      <label>Game</label>
-      <select id="gameFilter"><option value="cs2">CS2</option><option value="dota2">Dota 2</option><option value="tf2">TF2</option></select>
-    </div>
-    <div class="filter-group"><label>Min $</label><input type="number" id="minPrice" value="0.05" step="0.01" min="0"></div>
-    <div class="filter-group"><label>Max $</label><input type="number" id="maxPrice" value="1000" step="1" min="0"></div>
-    <div class="filter-group">
-      <label>Min discount</label>
-      <select id="discountFilter">
-        <option value="10">10% off</option>
-        <option value="15" selected>15% off</option>
-        <option value="20">20% off</option>
-        <option value="30">30% off</option>
-        <option value="40">40% off</option>
-      </select>
-    </div>
-    <div class="filter-group">
-      <label>Source</label>
-      <select id="sourceFilter">
-        <option value="all">All</option>
-        <option value="skinport">Skinport</option>
-        <option value="csfloat">CSFloat</option>
-      </select>
-    </div>
-    <div class="filter-group" style="margin-left:auto;">
-      <label>Auto-refresh</label>
-      <select id="refreshInterval">
-        <option value="0">Off</option>
-        <option value="30">30s</option>
-        <option value="60" selected>1m</option>
-        <option value="120">2m</option>
-        <option value="300">5m</option>
-      </select>
+  <div class="filters-wrap">
+    <div class="filters">
+      <div class="fg"><label>Game</label><select id="gameFilter"><option value="cs2">CS2</option><option value="dota2">Dota 2</option><option value="tf2">TF2</option></select></div>
+      <div class="fg"><label>Source</label><select id="sourceFilter"><option value="all">All</option><option value="skinport">Skinport</option><option value="csfloat">CSFloat</option></select></div>
+      <div class="fg"><label>Min $</label><input type="number" id="minPrice" value="0.05" step="0.01" min="0"></div>
+      <div class="fg"><label>Max $</label><input type="number" id="maxPrice" value="1000" step="1" min="0"></div>
+      <div class="fg"><label>Min disc.</label><select id="discountFilter"><option value="10">10%</option><option value="15" selected>15%</option><option value="20">20%</option><option value="30">30%</option><option value="40">40%</option></select></div>
+      <div class="fg"><label>Refresh</label><select id="refreshInterval"><option value="0">Off</option><option value="30">30s</option><option value="60" selected>1m</option><option value="120">2m</option><option value="300">5m</option></select></div>
     </div>
   </div>
   <div id="errBox" style="display:none;" class="err-box"></div>
   <div class="metrics">
-    <div class="metric"><div class="metric-label">Deals found</div><div class="metric-value" id="m-count">—</div></div>
-    <div class="metric"><div class="metric-label">Avg discount</div><div class="metric-value green" id="m-avg">—</div></div>
-    <div class="metric"><div class="metric-label">Best deal</div><div class="metric-value green" id="m-best">—</div></div>
-    <div class="metric"><div class="metric-label">Last scan</div><div class="metric-value" id="m-time" style="font-size:14px;padding-top:4px;">—</div></div>
+    <div class="metric"><div class="metric-label">Deals</div><div class="metric-value" id="m-count">—</div></div>
+    <div class="metric"><div class="metric-label">Avg disc.</div><div class="metric-value green" id="m-avg">—</div></div>
+    <div class="metric"><div class="metric-label">Best</div><div class="metric-value green" id="m-best">—</div></div>
+    <div class="metric"><div class="metric-label">Scanned</div><div class="metric-value" id="m-time" style="font-size:14px;padding-top:4px;">—</div></div>
   </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th style="width:32%" onclick="sortBy('name')">Item ↕</th>
-          <th style="width:9%">Source</th>
-          <th style="width:11%;text-align:right" onclick="sortBy('listing')">Listing ↕</th>
-          <th style="width:11%;text-align:right" onclick="sortBy('market')">Market ↕</th>
-          <th style="width:9%;text-align:right" onclick="sortBy('discount')">Disc. ↕</th>
-          <th style="width:10%;text-align:right" onclick="sortBy('profit')">Profit ↕</th>
-          <th style="width:18%">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="resultsBody"><tr><td colspan="7" class="empty">Hit "Scan now" to find deals</td></tr></tbody>
-    </table>
+  <div class="sort-bar">
+    <div class="sort-chip active" onclick="sortBy('discount',this)">Discount</div>
+    <div class="sort-chip" onclick="sortBy('profit',this)">Profit</div>
+    <div class="sort-chip" onclick="sortBy('listing',this)">Price</div>
+    <div class="sort-chip" onclick="sortBy('name',this)">Name</div>
   </div>
+  <div id="dealsContainer"><div class="deals-list"><div class="empty">Hit "Scan" to find deals</div></div></div>
   <div class="refresh-note" id="nextScan"></div>
 </div>
 
-<!-- STEAM BUYS TAB -->
+<!-- STEAM TAB -->
 <div class="tab-content" id="tab-steam">
-  <div class="info-box">Checks high-value CS2 skins on Steam Market vs CSFloat resell price. Takes ~70s due to Steam rate limits.</div>
-  <div class="filters">
-    <div class="filter-group"><label>Min $</label><input type="number" id="steamMinPrice" value="50" step="10" min="0"></div>
-    <div class="filter-group"><label>Max $</label><input type="number" id="steamMaxPrice" value="500" step="50" min="0"></div>
-    <div class="filter-group"><label>Min profit $</label><input type="number" id="steamMinProfit" value="5" step="1" min="0"></div>
-    <div class="filter-group">
-      <label>Min discount</label>
-      <select id="steamMinDisc">
-        <option value="5">5%</option>
-        <option value="10" selected>10%</option>
-        <option value="15">15%</option>
-        <option value="20">20%</option>
-      </select>
+  <div class="info-box">Checks CS2 skins on Steam Market vs CSFloat resell price. Takes ~90s.</div>
+  <div class="filters-wrap">
+    <div class="filters">
+      <div class="fg"><label>Min $</label><input type="number" id="steamMinPrice" value="50" step="10" min="0"></div>
+      <div class="fg"><label>Max $</label><input type="number" id="steamMaxPrice" value="500" step="50" min="0"></div>
+      <div class="fg"><label>Min profit</label><input type="number" id="steamMinProfit" value="5" step="1" min="0"></div>
+      <div class="fg"><label>Min disc.</label><select id="steamMinDisc"><option value="5">5%</option><option value="10" selected>10%</option><option value="15">15%</option><option value="20">20%</option></select></div>
     </div>
-    <button class="btn primary" id="steamScanBtn" onclick="startSteamScan()">Scan Steam</button>
-    <span id="steamStatus" style="font-size:13px;color:#888;margin-left:8px;"></span>
+    <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
+      <button class="scan-btn" id="steamScanBtn" onclick="startSteamScan()">Scan Steam</button>
+      <span id="steamStatus" style="font-size:13px;color:#888;"></span>
+    </div>
   </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th style="width:32%">Item</th>
-          <th style="width:12%;text-align:right">Buy (Steam)</th>
-          <th style="width:12%;text-align:right">Sell ref</th>
-          <th style="width:11%;text-align:right">Net profit</th>
-          <th style="width:9%;text-align:right">Disc.</th>
-          <th style="width:8%;text-align:right">Volume</th>
-          <th style="width:16%">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="steamBody"><tr><td colspan="7" class="empty">Click "Scan Steam" to find deals</td></tr></tbody>
-    </table>
+  <div id="steamContainer"><div class="deals-list"><div class="empty">Click "Scan Steam" to find deals</div></div></div>
+</div>
+
+<!-- HISTORY TAB -->
+<div class="tab-content" id="tab-history">
+  <div class="filters-wrap">
+    <input type="text" id="historySearch" placeholder="Search item name e.g. AK-47 | Redline..." oninput="searchHistory()" style="width:100%;">
   </div>
+  <div id="historyResults" style="padding:0.75rem 1rem;"></div>
+  <div id="historyChart" style="padding:0 1rem 1rem;"></div>
 </div>
 
 <!-- PENDING TAB -->
 <div class="tab-content" id="tab-pending">
-  <div class="info-box">Items you have purchased will appear here while waiting to arrive. The server checks every 30 seconds and will auto-list on CSFloat when they arrive.</div>
-  <div class="table-wrap" style="margin-top:1rem;">
-    <table>
-      <thead>
-        <tr>
-          <th style="width:40%">Item</th>
-          <th style="width:15%;text-align:right">Market ref</th>
-          <th style="width:15%;text-align:right">List at</th>
-          <th style="width:15%">Status</th>
-          <th style="width:15%">Bought at</th>
-        </tr>
-      </thead>
-      <tbody id="pendingBody"><tr><td colspan="5" class="empty">No pending items</td></tr></tbody>
-    </table>
-  </div>
+  <div class="info-box">Purchased items waiting to arrive. Server auto-lists on CSFloat when they arrive.</div>
+  <div class="inv-list" id="pendingBody"><div class="empty">No pending items</div></div>
 </div>
 
 <!-- LISTED TAB -->
 <div class="tab-content" id="tab-listed">
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th style="width:40%">Item</th>
-          <th style="width:15%;text-align:right">Listed at</th>
-          <th style="width:15%">Status</th>
-          <th style="width:15%">Listed on</th>
-          <th style="width:15%">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="listedBody"><tr><td colspan="5" class="empty">No active listings</td></tr></tbody>
-    </table>
-  </div>
+  <div class="inv-list" id="listedBody"><div class="empty">No active listings</div></div>
 </div>
 
 <script>
 const API = "http://localhost:3001";
-let results = [];
-let sortCol = "discount";
-let sortDir = -1;
-let refreshTimer = null;
-let countdownTimer = null;
-let countdownSec = 0;
+let results = [], sortCol = "discount", sortDir = -1;
+let refreshTimer = null, countdownTimer = null, countdownSec = 0;
+let viewMode = localStorage.getItem("ss-view") || "mobile";
+let darkMode = localStorage.getItem("ss-dark") === "on";
 
-function switchTab(tab) {
-  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-  document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
-  event.currentTarget.classList.add("active");
+if (darkMode) document.body.classList.add("dark");
+if (viewMode === "desktop") document.getElementById("viewTog").textContent = "🖥 Desktop";
+if (darkMode) document.getElementById("darkTog").textContent = "☾ Dark";
+
+function toggleView() {
+  viewMode = viewMode === "mobile" ? "desktop" : "mobile";
+  localStorage.setItem("ss-view", viewMode);
+  document.getElementById("viewTog").textContent = viewMode === "desktop" ? "🖥 Desktop" : "📱 Mobile";
+  renderDeals(results);
+}
+
+function toggleDark() {
+  darkMode = !darkMode;
+  document.body.classList.toggle("dark", darkMode);
+  localStorage.setItem("ss-dark", darkMode ? "on" : "off");
+  document.getElementById("darkTog").textContent = darkMode ? "☾ Dark" : "☀ Light";
+}
+
+function switchTab(el, tab) {
+  document.querySelectorAll(".tab").forEach(function(t) { t.classList.remove("active"); });
+  document.querySelectorAll(".tab-content").forEach(function(t) { t.classList.remove("active"); });
+  el.classList.add("active");
   document.getElementById("tab-" + tab).classList.add("active");
   if (tab === "pending" || tab === "listed") loadInventory();
 }
 
-function setStatus(state, text) {
-  document.getElementById("dot").className = "dot " + state;
-  document.getElementById("status-text").textContent = text;
-}
-
-function showError(msg) {
-  const box = document.getElementById("errBox");
-  box.style.display = "block";
-  box.textContent = msg;
-}
+function setStatus(s, t) { document.getElementById("dot").className = "dot " + s; document.getElementById("status-text").textContent = t; }
+function showError(m) { var b = document.getElementById("errBox"); b.style.display = "block"; b.textContent = m; }
 function hideError() { document.getElementById("errBox").style.display = "none"; }
 
+function safeId(name) {
+  try { return "x" + btoa(unescape(encodeURIComponent(name))).replace(/[^a-zA-Z0-9]/g, "").slice(0, 24); }
+  catch(e) { return "x" + name.length + name.charCodeAt(0); }
+}
+
 async function startScan() {
-  hideError();
-  setStatus("loading", "Scanning...");
-  const params = new URLSearchParams({
-    game:        document.getElementById("gameFilter").value,
-    minPrice:    document.getElementById("minPrice").value,
-    maxPrice:    document.getElementById("maxPrice").value,
+  hideError(); setStatus("loading", "Scanning...");
+  var params = new URLSearchParams({
+    game: document.getElementById("gameFilter").value,
+    minPrice: document.getElementById("minPrice").value,
+    maxPrice: document.getElementById("maxPrice").value,
     minDiscount: document.getElementById("discountFilter").value,
-    source:      document.getElementById("sourceFilter").value,
-  }).toString();
+    source: document.getElementById("sourceFilter").value,
+  });
   try {
-    const res = await fetch(API + "/deals?" + params);
+    var res = await fetch(API + "/deals?" + params);
     if (!res.ok) throw new Error("Server returned " + res.status);
-    const json = await res.json();
+    var json = await res.json();
     results = json.deals || [];
-    renderTable(results);
+    renderDeals(results);
     document.getElementById("m-time").textContent = new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
     setStatus("ok", "Live");
     scheduleRefresh();
-  } catch (err) {
-    setStatus("error", "Error");
-    showError("Cannot reach server — make sure npm run dev is running.");
-  }
+  } catch(e) { setStatus("error", "Error"); showError("Cannot reach server — make sure npm run dev is running."); }
 }
 
-async function startSteamScan() {
-  const btn = document.getElementById("steamScanBtn");
-  const status = document.getElementById("steamStatus");
-  btn.disabled = true;
-  status.textContent = "Scanning... (~70s)";
-  const params = new URLSearchParams({
-    minProfit:   document.getElementById("steamMinProfit").value,
-    minDiscount: document.getElementById("steamMinDisc").value,
-    limit: 20,
-  });
-  try {
-    const res = await fetch(API + "/steam-deals?" + params);
-    if (!res.ok) throw new Error("Server returned " + res.status);
-    const json = await res.json();
-    const deals = json.deals || [];
-    status.textContent = "Found " + deals.length + " deals";
-    const body = document.getElementById("steamBody");
-    if (!deals.length) {
-      body.innerHTML = "<tr><td colspan='7' class='empty'>No deals found — try lowering the thresholds</td></tr>";
-      return;
-    }
-    body.innerHTML = deals.map(function(d) {
-      return "<tr>" +
-        "<td title='" + d.name + "'>" + d.name + "</td>" +
-        "<td style='text-align:right'>$" + d.buyPrice.toFixed(2) + "</td>" +
-        "<td style='text-align:right'>$" + d.sellRef.toFixed(2) + "</td>" +
-        "<td style='text-align:right;color:#3B6D11;font-weight:500'>$" + d.profit.toFixed(2) + "</td>" +
-        "<td style='text-align:right'><span class='discount" + (d.discount >= 20 ? " hot" : "") + "'>" + d.discount.toFixed(1) + "%</span></td>" +
-        "<td style='text-align:right;color:#888'>" + (d.volume || "—") + "</td>" +
-        "<td style='display:flex;gap:6px;'>" +
-          "<button class='btn success' onclick='steamBuyRelist(\"" + encodeURIComponent(JSON.stringify(d)) + "\")'>Buy & Relist</button>" +
-          "<a class='buy-link' href='" + d.url + "' target='_blank' style='line-height:26px'>View ↗</a>" +
-        "</td>" +
-      "</tr>";
-    }).join("");
-  } catch (err) {
-    status.textContent = "Error: " + err.message;
-  } finally {
-    btn.disabled = false;
-  }
+function sortBy(col, el) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
+  if (el) { document.querySelectorAll(".sort-chip").forEach(function(c) { c.classList.remove("active"); }); el.classList.add("active"); }
+  renderDeals(results);
 }
 
-async function steamBuyRelist(encoded) {
-  const d = JSON.parse(decodeURIComponent(encoded));
-  window.open(d.url, "_blank");
-  try {
-    const res = await fetch(API + "/buy", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: d.name, listingId: null, market: d.sellRef }),
-    });
-    const json = await res.json();
-    if (json.ok) {
-      alert("Steam Market opened!\n\nComplete the purchase on Steam.\nServer will auto-list \"" + d.name + "\" on CSFloat at $" + json.targetPrice + " when it arrives.");
-      loadInventory();
-    }
-  } catch (err) {
-    alert("Error: " + err.message);
-  }
-}
-
-async function buyAndRelist(encoded) {
-  const deal = JSON.parse(decodeURIComponent(encoded));
-  window.open(deal.url, "_blank");
-  try {
-    const res = await fetch(API + "/buy", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: deal.name, listingId: deal.listingId, market: deal.market }),
-    });
-    const json = await res.json();
-    if (json.ok) {
-      alert("Purchase page opened!\n\nComplete the purchase on CSFloat.\nServer will auto-list \"" + deal.name + "\" at $" + json.targetPrice + " when it arrives.");
-      loadInventory();
-    }
-  } catch (err) {
-    alert("Error: " + err.message);
-  }
-}
-
-function sortBy(col) {
-  if (sortCol === col) sortDir *= -1;
-  else { sortCol = col; sortDir = -1; }
-  renderTable(results);
-}
-
-function renderTable(data) {
-  const body = document.getElementById("resultsBody");
-  if (!data.length) {
-    body.innerHTML = "<tr><td colspan='7' class='empty'>No deals found — try loosening your filters</td></tr>";
+function renderDeals(data) {
+  var container = document.getElementById("dealsContainer");
+  if (!data || !data.length) {
+    container.innerHTML = "<div class='deals-list'><div class='empty'>No deals found — try loosening filters</div></div>";
     document.getElementById("m-count").textContent = "0";
     document.getElementById("m-avg").textContent = "—";
     document.getElementById("m-best").textContent = "—";
     return;
   }
-  const sorted = [...data].sort(function(a, b) {
+  var sorted = data.slice().sort(function(a,b) {
     var va = a[sortCol], vb = b[sortCol];
     if (typeof va === "string") return va.localeCompare(vb) * sortDir;
     return (va - vb) * sortDir;
   });
-  const discounts = data.map(function(d) { return d.discount; });
-  document.getElementById("m-count").textContent = data.length;
-  document.getElementById("m-avg").textContent = (discounts.reduce(function(a,b){return a+b;},0)/discounts.length).toFixed(1) + "%";
-  document.getElementById("m-best").textContent = Math.max.apply(null, discounts).toFixed(1) + "%";
+  var discs = data.map(function(d) { return d.discount; });
+  document.getElementById("m-count").textContent = data.length.toLocaleString();
+  document.getElementById("m-avg").textContent = (discs.reduce(function(a,b){return a+b;},0)/discs.length).toFixed(1) + "%";
+  document.getElementById("m-best").textContent = Math.max.apply(null, discs).toFixed(1) + "%";
 
-  body.innerHTML = sorted.map(function(d) {
-    var encoded = encodeURIComponent(JSON.stringify(d));
-    var srcBadge = "<span class='badge " + d.source + "'>" + (d.source === "skinport" ? "Skinport" : "CSFloat") + "</span>";
-    return "<tr>" +
-      "<td title='" + d.name + "'>" + d.name + "</td>" +
-      "<td>" + srcBadge + "</td>" +
-      "<td style='text-align:right'>$" + d.listing.toFixed(2) + "</td>" +
-      "<td style='text-align:right'>$" + d.market.toFixed(2) + "</td>" +
-      "<td style='text-align:right'><span class='discount" + (d.discount >= 30 ? " hot" : "") + "'>" + d.discount.toFixed(1) + "%</span></td>" +
-      "<td style='text-align:right;color:#3B6D11'>$" + d.profit.toFixed(2) + "</td>" +
-      "<td style='display:flex;gap:6px;'>" +
-        "<button class='btn success' onclick='buyAndRelist(\"" + encoded + "\")'>Buy & Relist</button>" +
-        "<a class='buy-link' href='" + d.url + "' target='_blank' style='line-height:26px'>View ↗</a>" +
-      "</td>" +
-    "</tr>";
-  }).join("");
+  if (viewMode === "desktop") {
+    var tbody = document.createElement("tbody");
+    sorted.forEach(function(d) {
+      var tr = document.createElement("tr");
+      var refId = safeId(d.name);
+      tr.innerHTML =
+        "<td style='max-width:200px;overflow:hidden;text-overflow:ellipsis' title='" + d.name.replace(/'/g,"") + "'>" + d.name + "</td>" +
+        "<td><span class='badge " + d.source + "'>" + (d.source==="skinport"?"Skinport":"CSFloat") + "</span></td>" +
+        "<td style='text-align:right'>$" + d.listing.toFixed(2) + "</td>" +
+        "<td style='text-align:right'>$" + d.market.toFixed(2) + "</td>" +
+        "<td style='text-align:right;font-weight:700;color:" + (d.discount>=30?"#a32d2d":"#3B6D11") + "'>" + d.discount.toFixed(1) + "%</td>" +
+        "<td style='text-align:right;color:#3B6D11;font-weight:600'>$" + d.profit.toFixed(2) + "</td>" +
+        "<td style='text-align:right;color:#185FA5' id='" + refId + "'>—</td>" +
+        "<td></td>";
+      var actTd = tr.cells[7];
+      var buyBtn = document.createElement("button");
+      buyBtn.className = "btn-buy"; buyBtn.textContent = "Buy & Relist";
+      buyBtn.addEventListener("click", function() { buyAndRelist(d); });
+      var viewLink = document.createElement("a");
+      viewLink.className = "btn-ghost"; viewLink.textContent = "View ↗";
+      viewLink.href = d.url; viewLink.target = "_blank";
+      viewLink.style.marginLeft = "6px";
+      actTd.appendChild(buyBtn);
+      actTd.appendChild(viewLink);
+      tbody.appendChild(tr);
+    });
+    var tbl = document.createElement("table");
+    tbl.innerHTML = "<thead><tr>" +
+      "<th onclick=\"sortBy('name',null)\">Item ↕</th><th>Source</th>" +
+      "<th onclick=\"sortBy('listing',null)\" style='text-align:right'>Listing ↕</th>" +
+      "<th onclick=\"sortBy('market',null)\" style='text-align:right'>Market ↕</th>" +
+      "<th onclick=\"sortBy('discount',null)\" style='text-align:right'>Disc. ↕</th>" +
+      "<th onclick=\"sortBy('profit',null)\" style='text-align:right'>Profit ↕</th>" +
+      "<th style='text-align:right'>Ref Price</th><th>Actions</th></tr></thead>";
+    tbl.appendChild(tbody);
+    var wrap = document.createElement("div");
+    wrap.className = "tbl-wrap";
+    wrap.appendChild(tbl);
+    container.innerHTML = "";
+    container.appendChild(wrap);
+  } else {
+    var list = document.createElement("div");
+    list.className = "deals-list";
+    sorted.forEach(function(d) {
+      var refId = safeId(d.name);
+      var card = document.createElement("div");
+      card.className = "deal-card";
+      var badge = "<span class='badge " + d.source + "'>" + (d.source==="skinport"?"Skinport":"CSFloat") + "</span>";
+      var discColor = d.discount >= 30 ? "#a32d2d" : "#3B6D11";
+      card.innerHTML = badge +
+        "<div class='deal-top'><span class='deal-name'>" + d.name + "</span>" +
+        "<span style='font-size:13px;font-weight:700;color:" + discColor + ";white-space:nowrap'>" + d.discount.toFixed(1) + "%</span></div>" +
+        "<div class='deal-stats'>" +
+          "<div class='ds'>Listing<span>$" + d.listing.toFixed(2) + "</span></div>" +
+          "<div class='ds'>Market<span>$" + d.market.toFixed(2) + "</span></div>" +
+          "<div class='ds profit'>Profit<span>$" + d.profit.toFixed(2) + "</span></div>" +
+          "<div class='ds ref'>Ref<span id='" + refId + "'>—</span></div>" +
+        "</div>" +
+        "<div class='deal-actions'></div>";
+      var actions = card.querySelector(".deal-actions");
+      var buyBtn = document.createElement("button");
+      buyBtn.className = "btn-buy"; buyBtn.textContent = "Buy & Relist";
+      buyBtn.addEventListener("click", function() { buyAndRelist(d); });
+      var viewLink = document.createElement("a");
+      viewLink.className = "btn-ghost"; viewLink.textContent = "View ↗";
+      viewLink.href = d.url; viewLink.target = "_blank";
+      actions.appendChild(buyBtn);
+      actions.appendChild(viewLink);
+      list.appendChild(card);
+    });
+    container.innerHTML = "";
+    container.appendChild(list);
+  }
+  // Auto-fetch ref prices
+  setTimeout(function() { fetchRefPrices(sorted); }, 300);
+}
+
+async function fetchRefPrices(deals) {
+  for (var i = 0; i < deals.length; i++) {
+    var d = deals[i];
+    var refId = safeId(d.name);
+    var el = document.getElementById(refId);
+    if (!el) continue;
+    try {
+      var res = await fetch(API + "/buff-price?name=" + encodeURIComponent(d.name));
+      var json = await res.json();
+      if (json.buff && json.buff.usd) {
+        el.textContent = "$" + json.buff.usd.toFixed(2);
+        el.style.color = "#185FA5";
+      } else {
+        el.textContent = "N/A";
+        el.style.color = "#aaa";
+      }
+    } catch(e) { el.textContent = "—"; }
+    await new Promise(function(r) { setTimeout(r, 30); });
+  }
+}
+
+async function buyAndRelist(d) {
+  window.open(d.url, "_blank");
+  try {
+    var res = await fetch(API + "/buy", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({name:d.name, listingId:d.listingId, market:d.market}) });
+    var json = await res.json();
+    if (json.ok) alert("Purchase page opened!\n\nComplete on CSFloat.\nServer will auto-list \"" + d.name + "\" at $" + json.targetPrice + " when it arrives.");
+    loadInventory();
+  } catch(e) { alert("Error: " + e.message); }
+}
+
+async function startSteamScan() {
+  var btn = document.getElementById("steamScanBtn");
+  var status = document.getElementById("steamStatus");
+  btn.disabled = true; status.textContent = "Scanning... (~90s)";
+  var params = new URLSearchParams({
+    minPrice: document.getElementById("steamMinPrice").value,
+    maxPrice: document.getElementById("steamMaxPrice").value,
+    minProfit: document.getElementById("steamMinProfit").value,
+    minDiscount: document.getElementById("steamMinDisc").value,
+  });
+  try {
+    var res = await fetch(API + "/steam-deals?" + params);
+    if (!res.ok) throw new Error("Server returned " + res.status);
+    var json = await res.json();
+    var deals = json.deals || [];
+    status.textContent = "Found " + deals.length + " deals";
+    var container = document.getElementById("steamContainer");
+    if (!deals.length) { container.innerHTML = "<div class='deals-list'><div class='empty'>No deals found — try lowering thresholds</div></div>"; return; }
+    var list = document.createElement("div");
+    list.className = "deals-list";
+    deals.forEach(function(d) {
+      var card = document.createElement("div");
+      card.className = "deal-card";
+      var discColor = d.discount >= 20 ? "#a32d2d" : "#3B6D11";
+      card.innerHTML = "<span class='badge steam'>Steam</span>" +
+        "<div class='deal-top'><span class='deal-name'>" + d.name + "</span>" +
+        "<span style='font-size:13px;font-weight:700;color:" + discColor + ";white-space:nowrap'>" + d.discount.toFixed(1) + "%</span></div>" +
+        "<div class='deal-stats'>" +
+          "<div class='ds'>Buy<span>$" + d.buyPrice.toFixed(2) + "</span></div>" +
+          "<div class='ds'>Sell ref<span>$" + d.sellRef.toFixed(2) + "</span></div>" +
+          "<div class='ds profit'>Profit<span>$" + d.profit.toFixed(2) + "</span></div>" +
+          "<div class='ds'>Volume<span>" + (d.volume||"—") + "</span></div>" +
+        "</div><div class='deal-actions'></div>";
+      var actions = card.querySelector(".deal-actions");
+      var buyBtn = document.createElement("button");
+      buyBtn.className = "btn-buy"; buyBtn.textContent = "Buy & Relist";
+      buyBtn.addEventListener("click", function() {
+        window.open(d.url, "_blank");
+        fetch(API + "/buy", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({name:d.name, listingId:null, market:d.sellRef}) })
+          .then(function(r) { return r.json(); })
+          .then(function(j) { if (j.ok) alert("Steam opened!\n\nComplete the purchase.\nServer will auto-list at $" + j.targetPrice + " when it arrives."); loadInventory(); });
+      });
+      var viewLink = document.createElement("a");
+      viewLink.className = "btn-ghost"; viewLink.textContent = "View ↗";
+      viewLink.href = d.url; viewLink.target = "_blank";
+      actions.appendChild(buyBtn); actions.appendChild(viewLink);
+      list.appendChild(card);
+    });
+    container.innerHTML = ""; container.appendChild(list);
+  } catch(e) { status.textContent = "Error: " + e.message; }
+  finally { btn.disabled = false; }
+}
+
+// History tab
+var historyTimer = null;
+function searchHistory() {
+  clearTimeout(historyTimer);
+  historyTimer = setTimeout(async function() {
+    var q = document.getElementById("historySearch").value.trim();
+    var resultsEl = document.getElementById("historyResults");
+    if (q.length < 2) { resultsEl.innerHTML = "<div class='empty'>Type at least 2 characters</div>"; return; }
+    try {
+      var res = await fetch(API + "/history-search?q=" + encodeURIComponent(q));
+      var json = await res.json();
+      var items = json.results || [];
+      if (!items.length) { resultsEl.innerHTML = "<div class='empty'>No items found in history yet — scan first</div>"; return; }
+      resultsEl.innerHTML = "";
+      items.forEach(function(name) {
+        var div = document.createElement("div");
+        div.style.cssText = "padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:13px;color:#1a6bbf;";
+        div.textContent = name;
+        div.addEventListener("click", function() { loadHistory(name); });
+        resultsEl.appendChild(div);
+      });
+    } catch(e) { resultsEl.innerHTML = "<div class='empty'>Error loading results</div>"; }
+  }, 300);
+}
+
+async function loadHistory(name) {
+  document.getElementById("historyResults").innerHTML = "<div class='empty'>Loading...</div>";
+  try {
+    var res = await fetch(API + "/history/" + encodeURIComponent(name));
+    var json = await res.json();
+    var history = json.history || [];
+    if (!history.length) { document.getElementById("historyChart").innerHTML = "<div class='empty'>No price history yet</div>"; return; }
+
+    // Group by day
+    var byDay = {};
+    history.forEach(function(r) {
+      var day = new Date(r.scanned_at).toLocaleDateString("en-US", {month:"short",day:"numeric"});
+      if (!byDay[day]) byDay[day] = [];
+      byDay[day].push(r.listing);
+    });
+    var days = Object.keys(byDay).reverse().slice(-14); // last 14 days
+    var prices = days.map(function(d) { var arr = byDay[d]; return +(arr.reduce(function(a,b){return a+b;},0)/arr.length).toFixed(2); });
+
+    var w = 560, h = 160, pad = 44;
+    var minP = Math.min.apply(null, prices);
+    var maxP = Math.max.apply(null, prices);
+    var range = maxP - minP || 0.01;
+    var xStep = (w - pad*2) / Math.max(days.length - 1, 1);
+
+    var pts = prices.map(function(p, i) {
+      return (pad + i * xStep).toFixed(1) + "," + (pad + (1-(p-minP)/range)*(h-pad*2)).toFixed(1);
+    }).join(" ");
+
+    var dots = prices.map(function(p, i) {
+      var x = (pad + i * xStep).toFixed(1);
+      var y = (pad + (1-(p-minP)/range)*(h-pad*2)).toFixed(1);
+      return "<circle cx='" + x + "' cy='" + y + "' r='3' fill='#1a6bbf'/>" +
+             "<text x='" + x + "' y='" + (+y-8) + "' font-size='9' text-anchor='middle' fill='#888'>$" + p + "</text>";
+    }).join("");
+
+    var labels = days.map(function(d, i) {
+      var x = (pad + i * xStep).toFixed(1);
+      return "<text x='" + x + "' y='" + (h-6) + "' font-size='9' text-anchor='middle' fill='#aaa'>" + d + "</text>";
+    }).join("");
+
+    document.getElementById("historyResults").innerHTML = "";
+    document.getElementById("historyChart").innerHTML =
+      "<div style='background:#fff;border-radius:10px;border:1px solid #e5e5e5;padding:1rem;'>" +
+      "<div style='font-size:13px;font-weight:500;margin-bottom:4px;'>" + name + "</div>" +
+      "<div style='font-size:11px;color:#888;margin-bottom:8px;'>" + history.length + " records over " + days.length + " days</div>" +
+      "<svg viewBox='0 0 " + w + " " + h + "' style='width:100%;height:auto;'>" +
+        "<polyline points='" + pts + "' fill='none' stroke='#1a6bbf' stroke-width='2'/>" +
+        dots + labels +
+      "</svg></div>";
+  } catch(e) { document.getElementById("historyChart").innerHTML = "<div class='empty'>Error loading history</div>"; }
 }
 
 async function loadInventory() {
   try {
-    const res = await fetch(API + "/inventory");
-    const json = await res.json();
-    const pending = json.pending || [];
-    const listed  = json.listed  || [];
+    var res = await fetch(API + "/inventory");
+    var json = await res.json();
+    var pending = json.pending || [], listed = json.listed || [];
     document.getElementById("pending-count").textContent = pending.length ? "(" + pending.length + ")" : "";
-    document.getElementById("listed-count").textContent  = listed.length  ? "(" + listed.length  + ")" : "";
-    document.getElementById("pendingBody").innerHTML = pending.length ? pending.map(function(p) {
-      return "<tr><td>" + p.name + "</td><td style='text-align:right'>$" + p.market.toFixed(2) + "</td><td style='text-align:right'>$" + p.targetPrice.toFixed(2) + "</td><td><span class='badge pending'>Waiting</span></td><td style='color:#888'>" + new Date(p.boughtAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) + "</td></tr>";
-    }).join("") : "<tr><td colspan='5' class='empty'>No pending items</td></tr>";
-    document.getElementById("listedBody").innerHTML = listed.length ? listed.map(function(l) {
-      return "<tr><td>" + l.name + "</td><td style='text-align:right'>$" + l.listedPrice.toFixed(2) + "</td><td><span class='badge listed'>Active</span></td><td style='color:#888'>" + new Date(l.listedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) + "</td><td><button class='btn danger' onclick='cancelListing(\"" + l.listingId + "\")'>Cancel</button></td></tr>";
-    }).join("") : "<tr><td colspan='5' class='empty'>No active listings</td></tr>";
-  } catch (err) {
-    console.error("Inventory load failed:", err.message);
-  }
+    document.getElementById("listed-count").textContent = listed.length ? "(" + listed.length + ")" : "";
+    var pb = document.getElementById("pendingBody");
+    pb.innerHTML = "";
+    if (!pending.length) { pb.innerHTML = "<div class='empty'>No pending items</div>"; }
+    else pending.forEach(function(p) {
+      pb.innerHTML += "<div class='inv-card'><div class='inv-name'>" + p.name + "</div>" +
+        "<div class='inv-stats'><div class='inv-stat'>Market<span>$" + p.market.toFixed(2) + "</span></div>" +
+        "<div class='inv-stat'>List at<span>$" + p.targetPrice.toFixed(2) + "</span></div>" +
+        "<div class='inv-stat'>Time<span>" + new Date(p.boughtAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) + "</span></div></div>" +
+        "<span class='badge pending'>Waiting</span></div>";
+    });
+    var lb = document.getElementById("listedBody");
+    lb.innerHTML = "";
+    if (!listed.length) { lb.innerHTML = "<div class='empty'>No active listings</div>"; }
+    else listed.forEach(function(l) {
+      var card = document.createElement("div");
+      card.className = "inv-card";
+      card.innerHTML = "<div class='inv-name'>" + l.name + "</div>" +
+        "<div class='inv-stats'><div class='inv-stat'>Listed at<span>$" + l.listedPrice.toFixed(2) + "</span></div>" +
+        "<div class='inv-stat'>Time<span>" + new Date(l.listedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) + "</span></div></div>" +
+        "<span class='badge listed'>Active</span>";
+      var btn = document.createElement("button");
+      btn.className = "btn-cancel"; btn.textContent = "Cancel listing";
+      btn.addEventListener("click", function() { cancelListing(l.listingId); });
+      card.appendChild(btn); lb.appendChild(card);
+    });
+  } catch(e) { console.error("Inventory load failed:", e.message); }
 }
 
 async function cancelListing(id) {
   if (!confirm("Cancel this listing on CSFloat?")) return;
-  try {
-    const res = await fetch(API + "/listing/" + id, { method: "DELETE" });
-    if (res.ok) loadInventory();
-    else alert("Failed to cancel listing.");
-  } catch (err) { alert("Error: " + err.message); }
+  try { var res = await fetch(API + "/listing/" + id, {method:"DELETE"}); if (res.ok) loadInventory(); else alert("Failed to cancel."); }
+  catch(e) { alert("Error: " + e.message); }
 }
 
 function scheduleRefresh() {
   if (refreshTimer) clearInterval(refreshTimer);
   if (countdownTimer) clearInterval(countdownTimer);
-  const interval = parseInt(document.getElementById("refreshInterval").value);
+  var interval = parseInt(document.getElementById("refreshInterval").value);
   if (!interval) { document.getElementById("nextScan").textContent = ""; return; }
   countdownSec = interval;
   countdownTimer = setInterval(function() {
@@ -438,7 +576,7 @@ document.getElementById("gameFilter").onchange =
 document.getElementById("minPrice").onchange =
 document.getElementById("maxPrice").onchange =
 document.getElementById("discountFilter").onchange =
-document.getElementById("sourceFilter").onchange = function() { if (results.length) renderTable(results); };
+document.getElementById("sourceFilter").onchange = function() { if (results.length) renderDeals(results); };
 document.getElementById("refreshInterval").onchange = scheduleRefresh;
 setInterval(function() { loadInventory(); }, 30000);
 </script>
