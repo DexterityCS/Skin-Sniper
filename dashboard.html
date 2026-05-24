@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skin Sniper</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f9f9f8; color: #1a1a1a; padding: 1.5rem; }
+  h1 { font-size: 20px; font-weight: 500; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 8px; }
+  .status-row { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #666; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #aaa; display: inline-block; }
+  .dot.loading { background: #BA7517; animation: pulse 1s infinite; }
+  .dot.ok { background: #639922; }
+  .dot.error { background: #E24B4A; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .tabs { display: flex; gap: 0; margin-bottom: 1rem; border-bottom: 1px solid #e5e5e5; }
+  .tab { font-size: 13px; padding: 8px 16px; cursor: pointer; color: #888; border-bottom: 2px solid transparent; margin-bottom: -1px; user-select: none; }
+  .tab.active { color: #1a1a1a; border-bottom-color: #1a1a1a; font-weight: 500; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; padding: 0.75rem 0; border-top: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5; margin-bottom: 1rem; align-items: center; }
+  .filter-group { display: flex; align-items: center; gap: 6px; }
+  .filter-group label { font-size: 12px; color: #666; white-space: nowrap; }
+  select, input[type=number] { font-size: 13px; padding: 4px 8px; border-radius: 6px; border: 1px solid #ddd; background: #fff; color: #1a1a1a; height: 30px; }
+  input[type=number] { width: 80px; }
+  .btn { font-size: 13px; padding: 4px 14px; border-radius: 6px; border: 1px solid #ddd; background: #fff; color: #1a1a1a; cursor: pointer; height: 30px; white-space: nowrap; }
+  .btn:hover { background: #f0f0f0; }
+  .btn.primary { background: #1a6bbf; color: #fff; border-color: #1a6bbf; }
+  .btn.primary:hover { background: #1559a0; }
+  .btn.success { background: #3B6D11; color: #fff; border-color: #3B6D11; font-size: 12px; padding: 3px 10px; height: 26px; }
+  .btn.success:hover { background: #2e5509; }
+  .btn.danger { background: #fff; color: #a32d2d; border-color: #f5c1c1; font-size: 12px; padding: 3px 10px; height: 26px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1rem; }
+  .metric { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 0.75rem 1rem; }
+  .metric-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .metric-value { font-size: 22px; font-weight: 500; }
+  .metric-value.green { color: #3B6D11; }
+  .err-box { background: #fff0f0; border: 1px solid #f5c1c1; border-radius: 6px; padding: 0.75rem 1rem; font-size: 13px; color: #a32d2d; margin-bottom: 1rem; }
+  .info-box { background: #f0f6ff; border: 1px solid #b5d4f4; border-radius: 6px; padding: 0.75rem 1rem; font-size: 13px; color: #185FA5; margin-bottom: 1rem; }
+  .table-wrap { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+  th { text-align: left; font-size: 11px; font-weight: 500; color: #888; padding: 8px 10px; border-bottom: 1px solid #e5e5e5; white-space: nowrap; cursor: pointer; user-select: none; background: #fafafa; }
+  td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 99px; font-weight: 500; }
+  .badge.skinport { background: #eaf3de; color: #3B6D11; }
+  .badge.csfloat { background: #faeeda; color: #854F0B; }
+  .badge.steam { background: #dceefb; color: #185FA5; }
+  .badge.pending { background: #fef3dc; color: #854F0B; }
+  .badge.listed { background: #eaf3de; color: #3B6D11; }
+  .discount { font-weight: 500; color: #3B6D11; }
+  .discount.hot { color: #a32d2d; font-weight: 700; }
+  .empty { text-align: center; padding: 2.5rem; color: #aaa; font-size: 14px; }
+  .buy-link { font-size: 12px; color: #1a6bbf; text-decoration: none; }
+  .buy-link:hover { text-decoration: underline; }
+  .refresh-note { font-size: 11px; color: #aaa; margin-top: 0.5rem; text-align: right; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Skin sniper</h1>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <div class="status-row"><span class="dot" id="dot"></span><span id="status-text">Idle</span></div>
+    <button class="btn primary" onclick="startScan()">Scan now</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('deals')">Deals</div>
+  <div class="tab" onclick="switchTab('steam')">Steam buys</div>
+  <div class="tab" onclick="switchTab('pending')">Pending <span id="pending-count"></span></div>
+  <div class="tab" onclick="switchTab('listed')">Listed <span id="listed-count"></span></div>
+</div>
+
+<!-- DEALS TAB -->
+<div class="tab-content active" id="tab-deals">
+  <div class="filters">
+    <div class="filter-group">
+      <label>Game</label>
+      <select id="gameFilter"><option value="cs2">CS2</option><option value="dota2">Dota 2</option><option value="tf2">TF2</option></select>
+    </div>
+    <div class="filter-group"><label>Min $</label><input type="number" id="minPrice" value="0.05" step="0.01" min="0"></div>
+    <div class="filter-group"><label>Max $</label><input type="number" id="maxPrice" value="1000" step="1" min="0"></div>
+    <div class="filter-group">
+      <label>Min discount</label>
+      <select id="discountFilter">
+        <option value="10">10% off</option>
+        <option value="15" selected>15% off</option>
+        <option value="20">20% off</option>
+        <option value="30">30% off</option>
+        <option value="40">40% off</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Source</label>
+      <select id="sourceFilter">
+        <option value="all">All</option>
+        <option value="skinport">Skinport</option>
+        <option value="csfloat">CSFloat</option>
+      </select>
+    </div>
+    <div class="filter-group" style="margin-left:auto;">
+      <label>Auto-refresh</label>
+      <select id="refreshInterval">
+        <option value="0">Off</option>
+        <option value="30">30s</option>
+        <option value="60" selected>1m</option>
+        <option value="120">2m</option>
+        <option value="300">5m</option>
+      </select>
+    </div>
+  </div>
+  <div id="errBox" style="display:none;" class="err-box"></div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Deals found</div><div class="metric-value" id="m-count">—</div></div>
+    <div class="metric"><div class="metric-label">Avg discount</div><div class="metric-value green" id="m-avg">—</div></div>
+    <div class="metric"><div class="metric-label">Best deal</div><div class="metric-value green" id="m-best">—</div></div>
+    <div class="metric"><div class="metric-label">Last scan</div><div class="metric-value" id="m-time" style="font-size:14px;padding-top:4px;">—</div></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:32%" onclick="sortBy('name')">Item ↕</th>
+          <th style="width:9%">Source</th>
+          <th style="width:11%;text-align:right" onclick="sortBy('listing')">Listing ↕</th>
+          <th style="width:11%;text-align:right" onclick="sortBy('market')">Market ↕</th>
+          <th style="width:9%;text-align:right" onclick="sortBy('discount')">Disc. ↕</th>
+          <th style="width:10%;text-align:right" onclick="sortBy('profit')">Profit ↕</th>
+          <th style="width:18%">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody"><tr><td colspan="7" class="empty">Hit "Scan now" to find deals</td></tr></tbody>
+    </table>
+  </div>
+  <div class="refresh-note" id="nextScan"></div>
+</div>
+
+<!-- STEAM BUYS TAB -->
+<div class="tab-content" id="tab-steam">
+  <div class="info-box">Checks high-value CS2 skins on Steam Market vs CSFloat resell price. Takes ~70s due to Steam rate limits.</div>
+  <div class="filters">
+    <div class="filter-group"><label>Min $</label><input type="number" id="steamMinPrice" value="50" step="10" min="0"></div>
+    <div class="filter-group"><label>Max $</label><input type="number" id="steamMaxPrice" value="500" step="50" min="0"></div>
+    <div class="filter-group"><label>Min profit $</label><input type="number" id="steamMinProfit" value="5" step="1" min="0"></div>
+    <div class="filter-group">
+      <label>Min discount</label>
+      <select id="steamMinDisc">
+        <option value="5">5%</option>
+        <option value="10" selected>10%</option>
+        <option value="15">15%</option>
+        <option value="20">20%</option>
+      </select>
+    </div>
+    <button class="btn primary" id="steamScanBtn" onclick="startSteamScan()">Scan Steam</button>
+    <span id="steamStatus" style="font-size:13px;color:#888;margin-left:8px;"></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:32%">Item</th>
+          <th style="width:12%;text-align:right">Buy (Steam)</th>
+          <th style="width:12%;text-align:right">Sell ref</th>
+          <th style="width:11%;text-align:right">Net profit</th>
+          <th style="width:9%;text-align:right">Disc.</th>
+          <th style="width:8%;text-align:right">Volume</th>
+          <th style="width:16%">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="steamBody"><tr><td colspan="7" class="empty">Click "Scan Steam" to find deals</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PENDING TAB -->
+<div class="tab-content" id="tab-pending">
+  <div class="info-box">Items you have purchased will appear here while waiting to arrive. The server checks every 30 seconds and will auto-list on CSFloat when they arrive.</div>
+  <div class="table-wrap" style="margin-top:1rem;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:40%">Item</th>
+          <th style="width:15%;text-align:right">Market ref</th>
+          <th style="width:15%;text-align:right">List at</th>
+          <th style="width:15%">Status</th>
+          <th style="width:15%">Bought at</th>
+        </tr>
+      </thead>
+      <tbody id="pendingBody"><tr><td colspan="5" class="empty">No pending items</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- LISTED TAB -->
+<div class="tab-content" id="tab-listed">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:40%">Item</th>
+          <th style="width:15%;text-align:right">Listed at</th>
+          <th style="width:15%">Status</th>
+          <th style="width:15%">Listed on</th>
+          <th style="width:15%">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="listedBody"><tr><td colspan="5" class="empty">No active listings</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const API = "http://localhost:3001";
+let results = [];
+let sortCol = "discount";
+let sortDir = -1;
+let refreshTimer = null;
+let countdownTimer = null;
+let countdownSec = 0;
+
+function switchTab(tab) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+  event.currentTarget.classList.add("active");
+  document.getElementById("tab-" + tab).classList.add("active");
+  if (tab === "pending" || tab === "listed") loadInventory();
+}
+
+function setStatus(state, text) {
+  document.getElementById("dot").className = "dot " + state;
+  document.getElementById("status-text").textContent = text;
+}
+
+function showError(msg) {
+  const box = document.getElementById("errBox");
+  box.style.display = "block";
+  box.textContent = msg;
+}
+function hideError() { document.getElementById("errBox").style.display = "none"; }
+
+async function startScan() {
+  hideError();
+  setStatus("loading", "Scanning...");
+  const params = new URLSearchParams({
+    game:        document.getElementById("gameFilter").value,
+    minPrice:    document.getElementById("minPrice").value,
+    maxPrice:    document.getElementById("maxPrice").value,
+    minDiscount: document.getElementById("discountFilter").value,
+    source:      document.getElementById("sourceFilter").value,
+  }).toString();
+  try {
+    const res = await fetch(API + "/deals?" + params);
+    if (!res.ok) throw new Error("Server returned " + res.status);
+    const json = await res.json();
+    results = json.deals || [];
+    renderTable(results);
+    document.getElementById("m-time").textContent = new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+    setStatus("ok", "Live");
+    scheduleRefresh();
+  } catch (err) {
+    setStatus("error", "Error");
+    showError("Cannot reach server — make sure npm run dev is running.");
+  }
+}
+
+async function startSteamScan() {
+  const btn = document.getElementById("steamScanBtn");
+  const status = document.getElementById("steamStatus");
+  btn.disabled = true;
+  status.textContent = "Scanning... (~70s)";
+  const params = new URLSearchParams({
+    minProfit:   document.getElementById("steamMinProfit").value,
+    minDiscount: document.getElementById("steamMinDisc").value,
+    limit: 20,
+  });
+  try {
+    const res = await fetch(API + "/steam-deals?" + params);
+    if (!res.ok) throw new Error("Server returned " + res.status);
+    const json = await res.json();
+    const deals = json.deals || [];
+    status.textContent = "Found " + deals.length + " deals";
+    const body = document.getElementById("steamBody");
+    if (!deals.length) {
+      body.innerHTML = "<tr><td colspan='7' class='empty'>No deals found — try lowering the thresholds</td></tr>";
+      return;
+    }
+    body.innerHTML = deals.map(function(d) {
+      return "<tr>" +
+        "<td title='" + d.name + "'>" + d.name + "</td>" +
+        "<td style='text-align:right'>$" + d.buyPrice.toFixed(2) + "</td>" +
+        "<td style='text-align:right'>$" + d.sellRef.toFixed(2) + "</td>" +
+        "<td style='text-align:right;color:#3B6D11;font-weight:500'>$" + d.profit.toFixed(2) + "</td>" +
+        "<td style='text-align:right'><span class='discount" + (d.discount >= 20 ? " hot" : "") + "'>" + d.discount.toFixed(1) + "%</span></td>" +
+        "<td style='text-align:right;color:#888'>" + (d.volume || "—") + "</td>" +
+        "<td style='display:flex;gap:6px;'>" +
+          "<button class='btn success' onclick='steamBuyRelist(\"" + encodeURIComponent(JSON.stringify(d)) + "\")'>Buy & Relist</button>" +
+          "<a class='buy-link' href='" + d.url + "' target='_blank' style='line-height:26px'>View ↗</a>" +
+        "</td>" +
+      "</tr>";
+    }).join("");
+  } catch (err) {
+    status.textContent = "Error: " + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function steamBuyRelist(encoded) {
+  const d = JSON.parse(decodeURIComponent(encoded));
+  window.open(d.url, "_blank");
+  try {
+    const res = await fetch(API + "/buy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: d.name, listingId: null, market: d.sellRef }),
+    });
+    const json = await res.json();
+    if (json.ok) {
+      alert("Steam Market opened!\n\nComplete the purchase on Steam.\nServer will auto-list \"" + d.name + "\" on CSFloat at $" + json.targetPrice + " when it arrives.");
+      loadInventory();
+    }
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+}
+
+async function buyAndRelist(encoded) {
+  const deal = JSON.parse(decodeURIComponent(encoded));
+  window.open(deal.url, "_blank");
+  try {
+    const res = await fetch(API + "/buy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: deal.name, listingId: deal.listingId, market: deal.market }),
+    });
+    const json = await res.json();
+    if (json.ok) {
+      alert("Purchase page opened!\n\nComplete the purchase on CSFloat.\nServer will auto-list \"" + deal.name + "\" at $" + json.targetPrice + " when it arrives.");
+      loadInventory();
+    }
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = -1; }
+  renderTable(results);
+}
+
+function renderTable(data) {
+  const body = document.getElementById("resultsBody");
+  if (!data.length) {
+    body.innerHTML = "<tr><td colspan='7' class='empty'>No deals found — try loosening your filters</td></tr>";
+    document.getElementById("m-count").textContent = "0";
+    document.getElementById("m-avg").textContent = "—";
+    document.getElementById("m-best").textContent = "—";
+    return;
+  }
+  const sorted = [...data].sort(function(a, b) {
+    var va = a[sortCol], vb = b[sortCol];
+    if (typeof va === "string") return va.localeCompare(vb) * sortDir;
+    return (va - vb) * sortDir;
+  });
+  const discounts = data.map(function(d) { return d.discount; });
+  document.getElementById("m-count").textContent = data.length;
+  document.getElementById("m-avg").textContent = (discounts.reduce(function(a,b){return a+b;},0)/discounts.length).toFixed(1) + "%";
+  document.getElementById("m-best").textContent = Math.max.apply(null, discounts).toFixed(1) + "%";
+
+  body.innerHTML = sorted.map(function(d) {
+    var encoded = encodeURIComponent(JSON.stringify(d));
+    var srcBadge = "<span class='badge " + d.source + "'>" + (d.source === "skinport" ? "Skinport" : "CSFloat") + "</span>";
+    return "<tr>" +
+      "<td title='" + d.name + "'>" + d.name + "</td>" +
+      "<td>" + srcBadge + "</td>" +
+      "<td style='text-align:right'>$" + d.listing.toFixed(2) + "</td>" +
+      "<td style='text-align:right'>$" + d.market.toFixed(2) + "</td>" +
+      "<td style='text-align:right'><span class='discount" + (d.discount >= 30 ? " hot" : "") + "'>" + d.discount.toFixed(1) + "%</span></td>" +
+      "<td style='text-align:right;color:#3B6D11'>$" + d.profit.toFixed(2) + "</td>" +
+      "<td style='display:flex;gap:6px;'>" +
+        "<button class='btn success' onclick='buyAndRelist(\"" + encoded + "\")'>Buy & Relist</button>" +
+        "<a class='buy-link' href='" + d.url + "' target='_blank' style='line-height:26px'>View ↗</a>" +
+      "</td>" +
+    "</tr>";
+  }).join("");
+}
+
+async function loadInventory() {
+  try {
+    const res = await fetch(API + "/inventory");
+    const json = await res.json();
+    const pending = json.pending || [];
+    const listed  = json.listed  || [];
+    document.getElementById("pending-count").textContent = pending.length ? "(" + pending.length + ")" : "";
+    document.getElementById("listed-count").textContent  = listed.length  ? "(" + listed.length  + ")" : "";
+    document.getElementById("pendingBody").innerHTML = pending.length ? pending.map(function(p) {
+      return "<tr><td>" + p.name + "</td><td style='text-align:right'>$" + p.market.toFixed(2) + "</td><td style='text-align:right'>$" + p.targetPrice.toFixed(2) + "</td><td><span class='badge pending'>Waiting</span></td><td style='color:#888'>" + new Date(p.boughtAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) + "</td></tr>";
+    }).join("") : "<tr><td colspan='5' class='empty'>No pending items</td></tr>";
+    document.getElementById("listedBody").innerHTML = listed.length ? listed.map(function(l) {
+      return "<tr><td>" + l.name + "</td><td style='text-align:right'>$" + l.listedPrice.toFixed(2) + "</td><td><span class='badge listed'>Active</span></td><td style='color:#888'>" + new Date(l.listedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) + "</td><td><button class='btn danger' onclick='cancelListing(\"" + l.listingId + "\")'>Cancel</button></td></tr>";
+    }).join("") : "<tr><td colspan='5' class='empty'>No active listings</td></tr>";
+  } catch (err) {
+    console.error("Inventory load failed:", err.message);
+  }
+}
+
+async function cancelListing(id) {
+  if (!confirm("Cancel this listing on CSFloat?")) return;
+  try {
+    const res = await fetch(API + "/listing/" + id, { method: "DELETE" });
+    if (res.ok) loadInventory();
+    else alert("Failed to cancel listing.");
+  } catch (err) { alert("Error: " + err.message); }
+}
+
+function scheduleRefresh() {
+  if (refreshTimer) clearInterval(refreshTimer);
+  if (countdownTimer) clearInterval(countdownTimer);
+  const interval = parseInt(document.getElementById("refreshInterval").value);
+  if (!interval) { document.getElementById("nextScan").textContent = ""; return; }
+  countdownSec = interval;
+  countdownTimer = setInterval(function() {
+    countdownSec--;
+    document.getElementById("nextScan").textContent = "Next scan in " + countdownSec + "s";
+    if (countdownSec <= 0) countdownSec = interval;
+  }, 1000);
+  refreshTimer = setInterval(function() { startScan(); }, interval * 1000);
+}
+
+document.getElementById("gameFilter").onchange =
+document.getElementById("minPrice").onchange =
+document.getElementById("maxPrice").onchange =
+document.getElementById("discountFilter").onchange =
+document.getElementById("sourceFilter").onchange = function() { if (results.length) renderTable(results); };
+document.getElementById("refreshInterval").onchange = scheduleRefresh;
+setInterval(function() { loadInventory(); }, 30000);
+</script>
+</body>
+</html>
