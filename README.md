@@ -22,7 +22,8 @@ A personal CS2 skin arbitrage tool that scans Skinport and CSFloat for underpric
 - **Backend** — Node.js + Express
 - **Data sources** — Skinport API, CSFloat API, Steam Market API, ByMykel CSGO-API
 - **Dashboard** — vanilla HTML/CSS/JS, opens as a local file
->>>>>>> b9fef20e4b8bd6df7ab1cedca1b4f9ac6155c751
+
+<img width="2550" height="848" alt="image" src="https://github.com/user-attachments/assets/9c9ee7ea-f4ec-4ef4-9b10-9c92c5700681" />
 
 ## Setup
 
