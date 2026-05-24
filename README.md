@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Skin Sniper — Backend API
 
 A lightweight Node.js server that fetches and compares skin prices across
