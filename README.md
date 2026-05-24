@@ -29,7 +29,6 @@ A personal CS2 skin arbitrage tool that scans Skinport and CSFloat for underpric
 **Requirements:** Node.js 18+
 
 ```bash
-<<<<<<< HEAD
 # 1. Install dependencies
 npm install
 
