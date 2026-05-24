@@ -1,0 +1,17 @@
+{
+  "name": "skin-sniper-api",
+  "version": "1.0.0",
+  "description": "Backend API for the Steam skin sniper dashboard",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.18.2",
+    "git": "^0.1.5",
+    "node-fetch": "^3.3.2"
+  }
+}
